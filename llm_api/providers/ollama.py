@@ -3,7 +3,7 @@
 # 役割: Ollamaと対話するための標準プロバイダー。設定値をconfigモジュールから正しく取得し、堅牢なリトライ機能を提供する。
 
 import logging
-import asyncio  # 修正: asyncioをインポート
+import asyncio
 from typing import Any, Dict
 
 import httpx
@@ -34,6 +34,52 @@ class OllamaProvider(LLMProvider):
             ProviderCapability.JSON_MODE: True,
         }
 
+    # ★★★ 修正箇所: `call` メソッドをオーバーライドしてリトライ機能を追加 ★★★
+    async def call(self, prompt: str, system_prompt: str = "", **kwargs) -> Dict[str, Any]:
+        """
+        Ollama APIを呼び出す。指数関数的バックオフによるリトライロジックを実装。
+        """
+        last_exception = None
+        model = kwargs.get("model", self.default_model)
+
+        for attempt in range(settings.OLLAMA_MAX_RETRIES):
+            try:
+                # 例外を送出する可能性のある standard_call を直接呼び出す
+                return await self.standard_call(prompt, system_prompt, **kwargs)
+            except (httpx.HTTPStatusError, httpx.RequestError) as e:
+                last_exception = e
+                # 5xx系のサーバーエラーまたは接続エラーの場合にリトライ
+                should_retry = False
+                if isinstance(e, httpx.HTTPStatusError) and 500 <= e.response.status_code < 600:
+                    should_retry = True
+                elif isinstance(e, httpx.RequestError):
+                    should_retry = True
+
+                if should_retry and attempt < settings.OLLAMA_MAX_RETRIES - 1:
+                    wait_time = settings.OLLAMA_BACKOFF_FACTOR ** attempt
+                    logger.warning(
+                        f"Ollama API call failed: {e}. Retrying in {wait_time:.2f}s... "
+                        f"(Attempt {attempt + 1}/{settings.OLLAMA_MAX_RETRIES})"
+                    )
+                    await asyncio.sleep(wait_time)
+                    continue  # 次の試行へ
+                else:
+                    # リトライ対象外のエラーまたはリトライ回数上限
+                    error_msg = f"Ollama API request failed after {attempt + 1} attempts: {e}"
+                    logger.error(error_msg)
+                    return {"text": "", "model": model, "usage": {}, "error": error_msg}
+            except Exception as e:
+                # その他の予期せぬ例外
+                error_msg = f"An unexpected error occurred during Ollama call: {e}"
+                logger.error(error_msg, exc_info=True)
+                return {"text": "", "model": model, "usage": {}, "error": error_msg}
+
+        # ループを抜けた場合（リトライ上限に達した）
+        final_error_msg = f"Failed to get a response from Ollama after {settings.OLLAMA_MAX_RETRIES} attempts. Last exception: {last_exception}"
+        logger.error(final_error_msg)
+        return {"text": "", "model": model, "usage": {}, "error": final_error_msg}
+
+
     async def standard_call(self, prompt: str, system_prompt: str = "", **kwargs) -> Dict[str, Any]:
         """
         Ollama APIを呼び出し、標準化された辞書形式で結果を返す。
@@ -53,7 +99,6 @@ class OllamaProvider(LLMProvider):
             "stream": False,
         }
 
-        # 改善: temperatureなどのパラメータをoptionsにネスト
         options = {}
         supported_options = [
             'temperature', 'top_p', 'top_k', 'mirostat', 'mirostat_eta',
@@ -66,20 +111,17 @@ class OllamaProvider(LLMProvider):
         if options:
             payload['options'] = options
         
-        # 改善: JSONモードをサポート
         if kwargs.get('json_mode'):
             payload['format'] = 'json'
 
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.post(api_url, json=payload)
-                # 修正: 2xx以外のステータスコードで例外を送出
-                response.raise_for_status()
+                response.raise_for_status() # 2xx以外のステータスコードで例外を送出
                 response_data = response.json()
 
             full_response = response_data.get('message', {}).get('content', '')
             
-            # Nullチェックを追加してトークン数を安全に計算
             prompt_tokens = response_data.get("prompt_eval_count") or 0
             completion_tokens = response_data.get("eval_count") or 0
 
@@ -94,61 +136,14 @@ class OllamaProvider(LLMProvider):
                 "error": None
             }
         except (httpx.HTTPStatusError, httpx.RequestError) as e:
-            # 修正: リトライ可能なエラーはそのまま送出する
+            # リトライ可能なエラーはそのまま呼び出し元（callメソッド）に送出する
             logger.warning(f"Ollama API call failed, propagating exception: {e}")
             raise
         except Exception as e:
-            # 修正: 予期せぬエラーは捕捉し、エラー辞書を返す
+            # 予期せぬエラーは捕捉し、リトライ不能なエラーとして扱うために例外を再度raiseする
             error_msg = f"Ollama API呼び出し中に予期せぬエラー: {e}"
             logger.error(error_msg, exc_info=True)
-            return {"text": "", "model": model, "usage": {}, "error": error_msg}
-    
-    # 修正: メソッドをクラス内に正しくインデント
-    async def standard_call_with_retry(self, prompt: str, system_prompt: str = "", **kwargs) -> Dict[str, Any]:
-        """
-        リトライロジックを実装したstandard_callのラッパー。
-        5xxエラーや接続エラーが発生した場合に指数関数的バックオフでリトライする。
-        """
-        last_exception = None
-        model = kwargs.get("model", self.default_model)
-
-        for attempt in range(settings.OLLAMA_MAX_RETRIES):
-            try:
-                # 修正: 例外を送出する可能性のある standard_call を呼び出す
-                return await self.standard_call(prompt, system_prompt, **kwargs)
-            except httpx.HTTPStatusError as e:
-                last_exception = e
-                # 改善: 5xx系のサーバーエラーの場合にリトライ
-                if 500 <= e.response.status_code < 600 and attempt < settings.OLLAMA_MAX_RETRIES - 1:
-                    wait_time = settings.OLLAMA_BACKOFF_FACTOR ** attempt
-                    logger.warning(
-                        f"Ollama API returned status {e.response.status_code}. Retrying in {wait_time:.2f}s... "
-                        f"(Attempt {attempt + 1}/{settings.OLLAMA_MAX_RETRIES})"
-                    )
-                    await asyncio.sleep(wait_time)
-                else:
-                    # リトライ対象外のエラー (4xxなど) またはリトライ回数上限に達した場合
-                    error_msg = f"Ollama API HTTP Error: {e.response.status_code} - {e.response.text}"
-                    logger.error(error_msg)
-                    return {"text": "", "model": model, "usage": {}, "error": error_msg}
-            except httpx.RequestError as e: # 改善: タイムアウトや接続エラーもリトライ対象に
-                last_exception = e
-                if attempt < settings.OLLAMA_MAX_RETRIES - 1:
-                    wait_time = settings.OLLAMA_BACKOFF_FACTOR ** attempt
-                    logger.warning(
-                        f"Ollama API request failed: {e}. Retrying in {wait_time:.2f}s... "
-                        f"(Attempt {attempt + 1}/{settings.OLLAMA_MAX_RETRIES})"
-                    )
-                    await asyncio.sleep(wait_time)
-                else:
-                    error_msg = f"Ollama API request error after max retries: {e}"
-                    logger.error(error_msg)
-                    return {"text": "", "model": model, "usage": {}, "error": error_msg}
-        
-        # このパスには通常到達しないはずだが、フォールバックとして残す
-        final_error_msg = f"Failed to get a response from Ollama after {settings.OLLAMA_MAX_RETRIES} attempts. Last exception: {last_exception}"
-        logger.error(final_error_msg)
-        return {"text": "", "model": model, "usage": {}, "error": final_error_msg}
+            raise RuntimeError(error_msg) from e
 
     def should_use_enhancement(self, prompt: str, **kwargs) -> bool:
         """標準プロバイダーは拡張機能を使用しない。"""
