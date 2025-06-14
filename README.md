@@ -1,4 +1,3 @@
-# /README.md
 # Title: MetaIntelligence: The Intelligence of Intelligent Systems
 # Role: Overview, core features, and quick start guide for the MetaIntelligence project.
 
