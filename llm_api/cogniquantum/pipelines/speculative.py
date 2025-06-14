@@ -1,10 +1,11 @@
 # /llm_api/cogniquantum/pipelines/speculative.py
-# タイトル: Speculative Thought Pipeline Handler
-# 役割: 投機的思考パイプライン処理をsystem.pyから分離
+# Title: Speculative Thought Pipeline Handler based on "Thinking-level Speculative Decoding"
+# Role: 思考レベルの投機的デコーディングを実装し、軽量モデルで思考ドラフトを生成し、高機能モデルで検証・統合する。
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List # ★★★ 修正箇所: List をインポート ★★★
 import httpx
+import asyncio
 
 from .adaptive import AdaptivePipeline
 from ...rag import RAGManager
@@ -14,13 +15,13 @@ from ...providers.base import LLMProvider
 logger = logging.getLogger(__name__)
 
 class SpeculativePipeline:
-    """投機的思考パイプライン処理を担当するクラス"""
+    """思考レベルの投機的デコーディングを実装したパイプライン"""
     
     def __init__(self, provider: LLMProvider, base_model_kwargs: Dict[str, Any]):
-        self.provider = provider
+        self.provider = provider # 検証・統合用の高機能プロバイダー
         self.base_model_kwargs = base_model_kwargs
         self.adaptive_pipeline = AdaptivePipeline(provider, base_model_kwargs)
-        logger.info("SpeculativePipeline を初期化しました")
+        logger.info("SpeculativePipeline (Thinking-level Speculative Decoding) を初期化しました")
     
     async def execute(
         self,
@@ -33,7 +34,6 @@ class SpeculativePipeline:
         """投機的思考パイプラインの実行"""
         logger.info(f"思考レベルの投機的デコーディングパイプライン開始: {prompt[:80]}...")
         
-        # RAG処理
         current_prompt = prompt
         rag_source = None
         if use_rag or use_wikipedia:
@@ -41,130 +41,136 @@ class SpeculativePipeline:
             current_prompt = await rag_manager.retrieve_and_augment(prompt)
             rag_source = 'wikipedia' if use_wikipedia else 'knowledge_base'
 
-        # 1. ドラフト生成用モデルの自動選択
+        # 1. ドラフト生成用の軽量モデルを自動選択
         draft_model_name = await self._find_lightweight_model()
         
         if not draft_model_name:
-            logger.warning("適切な軽量モデルが見つかりませんでした。適応型パイプラインにフォールバックします。")
+            logger.warning("適切な軽量ドラフトモデルが見つかりませんでした。適応型パイプラインにフォールバックします。")
             return await self.adaptive_pipeline.execute(current_prompt, system_prompt, mode='balanced')
         
         try:
-            # 2. ドラフト生成
-            drafts = await self._generate_drafts(current_prompt, draft_model_name)
+            # 2. 軽量モデルで複数の思考ドラフトを並列生成
+            drafts = await self._generate_speculative_drafts(current_prompt, draft_model_name)
             
             if not drafts:
                 logger.error("ドラフト生成に失敗しました。")
                 return self._format_error_response("ドラフト生成に失敗しました。")
             
-            # 3. 検証と統合
+            # 3. 高機能モデルで検証と統合
             final_solution = await self._verify_and_integrate(current_prompt, drafts, system_prompt)
             
             if not final_solution:
                 logger.error("検証・統合に失敗しました。")
                 return self._format_error_response("検証・統合に失敗しました。")
             
-            # レスポンス構築
             thought_process = {
-                'draft_generator': f"ollama/{draft_model_name}",
-                'verifier_integrator': self.provider.provider_name,
-                'drafts_generated': len(drafts.split('\n\n')) if drafts else 0,
-                'speculative_method': 'draft_then_verify'
+                'draft_generator_model': f"ollama/{draft_model_name}",
+                'verifier_integrator_model': self.provider.provider_name,
+                'drafts_generated': len(drafts),
+                'speculative_method': 'thinking_level_speculative_decoding'
             }
             
             v2_improvements = {
-                'regime': 'N/A (Speculative)',
-                'reasoning_approach': 'speculative_thought',
+                'reasoning_approach': 'speculative_thought_v2',
                 'speculative_execution_enabled': True,
                 'rag_enabled': use_rag or use_wikipedia,
                 'rag_source': rag_source,
                 'draft_model': draft_model_name,
             }
 
-            return {
-                'success': True,
-                'final_solution': final_solution,
-                'image_url': None,
-                'thought_process': thought_process,
-                'v2_improvements': v2_improvements,
-                'version': 'v2'
-            }
+            return self._format_response(final_solution, thought_process, v2_improvements)
             
         except Exception as e:
             logger.error(f"投機的思考パイプライン実行中にエラー: {e}", exc_info=True)
             return self._format_error_response(str(e))
     
     async def _find_lightweight_model(self) -> Optional[str]:
-        """Ollamaから軽量モデルを取得"""
+        """Ollamaから利用可能な最も軽量なモデルを探索する"""
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
                 response = await client.get("http://localhost:11434/api/tags")
                 response.raise_for_status()
-                available_models = [m['name'] for m in response.json().get('models', [])]
+                available_models = response.json().get('models', [])
             
-            # 軽量モデルの候補を検索
+            if not available_models:
+                return None
+
+            # サイズが小さい、または名前に軽量であることを示すキーワードが含まれるモデルを優先
             lightweight_candidates = []
-            for model in available_models:
-                model_lower = model.lower()
-                if any(k in model_lower for k in ['phi', 'gemma', '2b', '3b', '4b']):
-                    lightweight_candidates.append(model)
+            for model_info in available_models:
+                model_name = model_info['name'].lower()
+                size_gb = model_info.get('size', 0) / (1024**3)
+                
+                # スコア付け
+                score = 0
+                if any(k in model_name for k in ['phi', 'gemma', 'tiny', '2b', '3b']):
+                    score += 2
+                if 'instruct' in model_name: # 指示追従モデルを優先
+                    score += 1
+                
+                lightweight_candidates.append({'name': model_info['name'], 'size': size_gb, 'score': score})
+
+            # スコアが高く、サイズが小さいモデルを選択
+            lightweight_candidates.sort(key=lambda x: (-x['score'], x['size']))
             
-            if lightweight_candidates:
-                # 最も小さそうなモデルを選択
-                selected_model = sorted(lightweight_candidates, key=len)[0]
-                logger.info(f"Ollamaからドラフト生成用の軽量モデルを自動選択しました: {selected_model}")
-                return selected_model
-            
-            logger.warning("適切な軽量モデルが見つかりませんでした")
-            return None
+            selected_model = lightweight_candidates[0]['name']
+            logger.info(f"Ollamaからドラフト生成用の軽量モデルを自動選択しました: {selected_model}")
+            return selected_model
             
         except Exception as e:
             logger.warning(f"Ollamaから利用可能なモデルの取得に失敗しました: {e}")
             return None
     
-    async def _generate_drafts(self, prompt: str, model_name: str) -> Optional[str]:
-        """軽量モデルでドラフトを生成"""
+    async def _generate_speculative_drafts(self, prompt: str, model_name: str) -> List[str]:
+        """軽量モデルで複数の思考ドラフトを並列生成する"""
         try:
             draft_provider = get_provider('ollama', enhanced=False)
-            draft_model_kwargs = {'model': model_name, 'temperature': 0.7}
             
-            draft_prompt = f"""以下の質問に対して、考えられる答えのドラフトを3つ、多様な視点から簡潔に生成してください。
+            # 多様な視点からのプロンプトを生成
+            perspectives = [
+                "論理的で分析的な視点",
+                "創造的で発散的な視点",
+                "批判的で懐疑的な視点"
+            ]
+            
+            tasks = []
+            for perspective in perspectives:
+                draft_prompt = f"""以下の質問に対して、「{perspective}」から考えられる思考のドラフトを一つ、簡潔に生成してください。
 
-質問: {prompt}
+質問: {prompt}"""
+                
+                # 多様性を出すために温度を少し上げる
+                draft_model_kwargs = {'model': model_name, 'temperature': 0.8}
+                tasks.append(draft_provider.call(draft_prompt, "", **draft_model_kwargs))
 
-回答形式:
-1. [視点1からの回答]
-2. [視点2からの回答]  
-3. [視点3からの回答]"""
+            draft_responses = await asyncio.gather(*tasks)
             
-            response = await draft_provider.call(draft_prompt, "", **draft_model_kwargs)
-            
-            if response.get('error'):
-                logger.error(f"ドラフト生成でエラー: {response['error']}")
-                return None
-            
-            return response.get('text', '')
+            valid_drafts = [res.get('text', '').strip() for res in draft_responses if res and not res.get('error')]
+            logger.info(f"{len(valid_drafts)}個の思考ドラフトを生成しました。")
+            return valid_drafts
             
         except Exception as e:
             logger.error(f"ドラフト生成中にエラー: {e}")
-            return None
+            return []
     
-    async def _verify_and_integrate(self, original_prompt: str, drafts: str, system_prompt: str) -> Optional[str]:
-        """ドラフトを検証・統合"""
+    async def _verify_and_integrate(self, original_prompt: str, drafts: List[str], system_prompt: str) -> Optional[str]:
+        """高機能モデルでドラフトを検証・統合する"""
         try:
-            verification_prompt = f"""以下の「元の質問」に対して、いくつかの「回答ドラフト」が提供されました。
+            drafts_context = "\n\n---\n\n".join(f"思考ドラフト {i+1}:\n{draft}" for i, draft in enumerate(drafts))
+            
+            verification_prompt = f"""以下の「元の質問」に対して、軽量モデルが生成した複数の「思考ドラフト」が提供されました。
 あなたは専門家として、これらのドラフトを評価・検証し、最も正確で包括的な最終回答を1つに統合してください。
-元の質問の意図を完全に満たすように、情報を取捨選択し、再構成してください。
+各ドラフトの良い点を取り入れ、誤りを修正し、論理的に一貫した最終回答を生成してください。
 
 # 元の質問
 {original_prompt}
 
-# 回答ドラフト
+# 思考ドラフト
 ---
-{drafts}
+{drafts_context}
 ---
 
-# 統合・検証済みの最終回答
-（上記のドラフトを参考に、最も適切で完全な回答を生成してください）
+# 検証・統合済みの最終回答
 """
             
             response = await self.provider.call(verification_prompt, system_prompt, **self.base_model_kwargs)
@@ -179,12 +185,22 @@ class SpeculativePipeline:
             logger.error(f"検証・統合中にエラー: {e}")
             return None
     
+    def _format_response(self, solution, thought_process, v2_improvements):
+        """統一されたレスポンス形式"""
+        return {
+            'success': True,
+            'final_solution': solution,
+            'thought_process': thought_process,
+            'v2_improvements': v2_improvements,
+            'version': 'v2',
+            'error': None
+        }
+
     def _format_error_response(self, error_message: str) -> Dict[str, Any]:
         """エラーレスポンスの形式"""
         return {
             'success': False,
             'final_solution': None,
-            'image_url': None,
             'thought_process': {'error': error_message},
             'v2_improvements': {'speculative_execution_enabled': True},
             'version': 'v2',
