@@ -4,7 +4,7 @@
 
 import json
 import logging
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field, asdict # ★★★ 修正箇所: asdictをインポート ★★★
 from typing import List, Dict, Optional
 from pathlib import Path
 
@@ -33,7 +33,13 @@ class ThinkingStrategyHub:
     def _load_strategies(self) -> Dict[str, Strategy]:
         """Loads strategies from the JSON storage file."""
         if not STORAGE_FILE.exists():
-            return {}
+            # デフォルト戦略を生成
+            default_strategies = {
+                "general_planning": Strategy(id="general_planning", name="General Planning Strategy", problem_class="planning", steps=["DECOMPOSE", "PLAN_STEP_BY_STEP", "VALIDATE_AND_REFINE"]),
+                "general_analysis": Strategy(id="general_analysis", name="General Analysis Strategy", problem_class="analysis", steps=["CRITICAL_THINKING", "SYNTHESIZE", "VALIDATE_AND_REFINE"]),
+                "general_default": Strategy(id="general_default", name="Default Strategy", problem_class="general", steps=["DECOMPOSE", "SYNTHESIZE"]),
+            }
+            return default_strategies
         try:
             with open(STORAGE_FILE, 'r', encoding='utf-8') as f:
                 data = json.load(f)
@@ -64,7 +70,8 @@ class ThinkingStrategyHub:
         """Finds the best strategy for a given problem class based on performance."""
         candidate_strategies = [s for s in self.strategies.values() if s.problem_class == problem_class]
         if not candidate_strategies:
-            return None
+            # 見つからない場合はデフォルトを返す
+            return self.strategies.get("general_default")
         
         # Sort by success rate, then by execution count (prefer well-tested strategies)
         best = sorted(candidate_strategies, key=lambda s: (s.performance_metrics['success_rate'], s.performance_metrics['execution_count']), reverse=True)[0]
@@ -91,4 +98,3 @@ class ThinkingStrategyHub:
         
         self._save_strategies()
         logger.info(f"Updated performance for strategy '{strategy.name}': success_rate={new_success_rate:.2f}, runs={metrics['execution_count']}")
-
