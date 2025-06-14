@@ -1,6 +1,6 @@
 # /llm_api/providers/enhanced_huggingface_v2.py
-# タイトル: Refactored EnhancedHuggingFaceProviderV2
-# 役割: HuggingFaceプロバイダーにCogniQuantum V2の機能を提供する。共通ロジックは基底クラスに委譲し、パラメータ最適化に特化。
+# Title: Refactored EnhancedHuggingFaceProviderV2
+# Role: HuggingFaceプロバイダーにCogniQuantum V2の機能を提供する。共通ロジックは基底クラスに委譲し、パラメータ最適化に特化。
 
 from typing import Any, Dict
 
@@ -13,7 +13,7 @@ class EnhancedHuggingFaceProviderV2(EnhancedLLMProvider):
     def should_use_enhancement(self, prompt: str, **kwargs) -> bool:
         return kwargs.get('force_v2', False) or kwargs.get('mode', 'simple') in [
             'efficient', 'balanced', 'decomposed', 'adaptive', 'paper_optimized', 'parallel',
-            'quantum_inspired', 'edge'
+            'quantum_inspired', 'edge', 'speculative_thought'
         ]
 
     def _get_optimized_params(self, mode: str, kwargs: Dict) -> Dict:

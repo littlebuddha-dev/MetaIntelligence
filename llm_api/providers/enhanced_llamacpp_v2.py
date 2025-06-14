@@ -1,6 +1,6 @@
 # /llm_api/providers/enhanced_llamacpp_v2.py
-# タイトル: Enhanced Llama.cpp Provider V2
-# 役割: Llama.cppプロバイダーにCogniQuantum V2の機能を提供する。
+# Title: Enhanced Llama.cpp Provider V2
+# Role: Llama.cppプロバイダーにCogniQuantum V2の機能を提供する。
 
 from typing import Any, Dict
 
@@ -19,7 +19,7 @@ class EnhancedLlamaCppProviderV2(EnhancedLLMProvider):
     def _get_optimized_params(self, mode: str, kwargs: Dict) -> Dict:
         """Llama.cppに最適化されたモデルパラメータを返す。"""
         params = kwargs.copy()
-        temp_map = {'efficient': 0.2, 'balanced': 0.5, 'decomposed': 0.4}
+        temp_map = {'efficient': 0.2, 'balanced': 0.5, 'decomposed': 0.4, 'speculative_thought': 0.7}
         if mode in temp_map and 'temperature' not in params:
             params['temperature'] = temp_map[mode]
         return params

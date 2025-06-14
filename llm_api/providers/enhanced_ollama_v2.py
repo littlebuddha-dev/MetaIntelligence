@@ -1,6 +1,6 @@
 # /llm_api/providers/enhanced_ollama_v2.py
-# タイトル: Refactored EnhancedOllamaProviderV2 with Corrected Default Model
-# 役割: OllamaプロバイダーにCogniQuantum V2の機能を提供する。デフォルトモデルをユーザー環境に合わせて修正。
+# Title: Refactored EnhancedOllamaProviderV2 with Corrected Default Model
+# Role: OllamaプロバイダーにCogniQuantum V2の機能を提供する。デフォルトモデルをユーザー環境に合わせて修正。
 
 import logging
 from typing import Any, Dict
@@ -17,7 +17,7 @@ class EnhancedOllamaProviderV2(EnhancedLLMProvider):
     def should_use_enhancement(self, prompt: str, **kwargs) -> bool:
         return kwargs.get('force_v2', False) or kwargs.get('mode', 'simple') in [
             'efficient', 'balanced', 'decomposed', 'adaptive', 'paper_optimized', 'parallel',
-            'quantum_inspired', 'edge'
+            'quantum_inspired', 'edge', 'speculative_thought'
         ]
 
     def _get_optimized_params(self, mode: str, kwargs: Dict) -> Dict:
@@ -38,7 +38,7 @@ class EnhancedOllamaProviderV2(EnhancedLLMProvider):
         if 'model' not in params:
             params['model'] = effective_model_name
 
-        temp_map = {'efficient': 0.2, 'balanced': 0.5, 'decomposed': 0.4, 'edge': 0.3}
+        temp_map = {'efficient': 0.2, 'balanced': 0.5, 'decomposed': 0.4, 'edge': 0.3, 'speculative_thought': 0.7}
         if mode in temp_map and 'temperature' not in params:
             params['temperature'] = temp_map[mode]
 

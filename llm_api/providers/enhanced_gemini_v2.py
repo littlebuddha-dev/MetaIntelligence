@@ -1,6 +1,6 @@
 # /llm_api/providers/enhanced_gemini_v2.py
-# タイトル: Refactored EnhancedGeminiProviderV2
-# 役割: GeminiプロバイダーにCogniQuantum V2の機能を提供する。共通ロジックは基底クラスに委譲し、パラメータ最適化に特化。
+# Title: Refactored EnhancedGeminiProviderV2
+# Role: GeminiプロバイダーにCogniQuantum V2の機能を提供する。共通ロジックは基底クラスに委譲し、パラメータ最適化に特化。
 
 from typing import Any, Dict
 
@@ -13,14 +13,14 @@ class EnhancedGeminiProviderV2(EnhancedLLMProvider):
     def should_use_enhancement(self, prompt: str, **kwargs) -> bool:
         return kwargs.get('force_v2', False) or kwargs.get('mode', 'simple') in [
             'efficient', 'balanced', 'decomposed', 'adaptive', 'paper_optimized', 'parallel',
-            'quantum_inspired', 'edge'
+            'quantum_inspired', 'edge', 'speculative_thought'
         ]
 
     def _get_optimized_params(self, mode: str, kwargs: Dict) -> Dict:
         """Geminiに最適化されたモデルパラメータを返す。"""
         params = kwargs.copy()
         if 'model' not in params:
-            if mode in ['decomposed', 'paper_optimized', 'quantum_inspired']:
+            if mode in ['decomposed', 'paper_optimized', 'quantum_inspired', 'speculative_thought']:
                 params['model'] = 'gemini-1.5-pro-latest' # 高度なタスクにはPro
             else:
                 params['model'] = 'gemini-1.5-flash-latest' # それ以外はFlash

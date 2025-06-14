@@ -1,6 +1,6 @@
 # /llm_api/providers/enhanced_claude_v2.py
-# タイトル: Refactored EnhancedClaudeProviderV2
-# 役割: ClaudeプロバイダーにCogniQuantum V2の機能を提供する。共通ロジックは基底クラスに委譲し、パラメータ最適化に特化。
+# Title: Refactored EnhancedClaudeProviderV2
+# Role: ClaudeプロバイダーにCogniQuantum V2の機能を提供する。共通ロジックは基底クラスに委譲し、パラメータ最適化に特化。
 
 from typing import Any, Dict
 
@@ -13,7 +13,7 @@ class EnhancedClaudeProviderV2(EnhancedLLMProvider):
     def should_use_enhancement(self, prompt: str, **kwargs) -> bool:
         return kwargs.get('force_v2', False) or kwargs.get('mode', 'simple') in [
             'efficient', 'balanced', 'decomposed', 'adaptive', 'paper_optimized', 'parallel',
-            'quantum_inspired', 'edge'
+            'quantum_inspired', 'edge', 'speculative_thought'
         ]
 
     def _get_optimized_params(self, mode: str, kwargs: Dict) -> Dict:
@@ -21,7 +21,7 @@ class EnhancedClaudeProviderV2(EnhancedLLMProvider):
         params = kwargs.copy()
         if 'model' not in params:
             # モードに応じてデフォルトモデルを賢く選択
-            if mode in ['decomposed', 'paper_optimized', 'quantum_inspired']:
+            if mode in ['decomposed', 'paper_optimized', 'quantum_inspired', 'speculative_thought']:
                 params['model'] = 'claude-3-sonnet-20240229' # 高度なタスクにはSonnet
             else:
                 params['model'] = 'claude-3-haiku-20240307' # それ以外はHaiku
