@@ -6,7 +6,7 @@ import logging
 from typing import Any, Dict, Optional
 
 from .enums import ComplexityRegime
-from .pipelines import AdaptivePipeline, ParallelPipeline, QuantumInspiredPipeline, SpeculativePipeline
+from .pipelines import AdaptivePipeline, ParallelPipeline, QuantumInspiredPipeline, SpeculativePipeline, SelfDiscoverPipeline # ★★★ SelfDiscoverPipeline をインポート ★★★
 from ..providers.base import LLMProvider
 
 logger = logging.getLogger(__name__)
@@ -24,9 +24,10 @@ class CogniQuantumSystemV2:
         
         # パイプライン初期化
         self.adaptive_pipeline = AdaptivePipeline(provider, base_model_kwargs)
-        self.parallel_pipeline = ParallelPipeline(provider, base_model_kwargs)
+        self.parallel_pipeline = ParallelPipeline(provider, base_model_kwargs, shared_adaptive_pipeline=self.adaptive_pipeline) # ★★★ shared_adaptive_pipeline を渡すように修正 ★★★
         self.quantum_pipeline = QuantumInspiredPipeline(provider, base_model_kwargs)
         self.speculative_pipeline = SpeculativePipeline(provider, base_model_kwargs)
+        self.self_discover_pipeline = SelfDiscoverPipeline(provider, base_model_kwargs) # ★★★ 追加 ★★★
         
         logger.info("CogniQuantumシステムV2の初期化完了 - 全パイプライン利用可能")
     
@@ -46,8 +47,7 @@ class CogniQuantumSystemV2:
         
         # モード別のパイプライン選択
         try:
-            if mode in ['adaptive', 'efficient', 'balanced', 'decomposed', 'edge', 'paper_optimized']: # paper_optimizedもadaptiveで処理されるように追加
-                # 適応型パイプライン
+            if mode in ['adaptive', 'efficient', 'balanced', 'decomposed', 'edge', 'paper_optimized']:
                 logger.info("適応型パイプラインを選択")
                 return await self.adaptive_pipeline.execute(
                     prompt=prompt,
@@ -61,7 +61,6 @@ class CogniQuantumSystemV2:
                 )
             
             elif mode == 'parallel':
-                # 並列パイプライン
                 logger.info("並列パイプラインを選択")
                 return await self.parallel_pipeline.execute(
                     prompt=prompt,
@@ -72,7 +71,6 @@ class CogniQuantumSystemV2:
                 )
             
             elif mode == 'quantum_inspired':
-                # 量子インスパイアードパイプライン
                 logger.info("量子インスパイアードパイプラインを選択")
                 return await self.quantum_pipeline.execute(
                     prompt=prompt,
@@ -82,8 +80,7 @@ class CogniQuantumSystemV2:
                     use_wikipedia=use_wikipedia
                 )
             
-            elif mode == 'speculative_thought': # speculative_thoughtモードを追加
-                # 投機的思考パイプライン
+            elif mode == 'speculative_thought':
                 logger.info("投機的思考パイプラインを選択")
                 return await self.speculative_pipeline.execute(
                     prompt=prompt,
@@ -92,9 +89,19 @@ class CogniQuantumSystemV2:
                     knowledge_base_path=knowledge_base_path,
                     use_wikipedia=use_wikipedia
                 )
+
+            # ★★★ self_discover モードの分岐を追加 ★★★
+            elif mode == 'self_discover':
+                logger.info("自己発見パイプラインを選択")
+                return await self.self_discover_pipeline.execute(
+                    prompt=prompt,
+                    system_prompt=system_prompt,
+                    use_rag=use_rag,
+                    knowledge_base_path=knowledge_base_path,
+                    use_wikipedia=use_wikipedia
+                )
             
             else:
-                # 未知のモード - 適応型にフォールバック
                 logger.warning(f"未知のモード '{mode}' です。適応型パイプラインにフォールバックします。")
                 return await self.adaptive_pipeline.execute(
                     prompt=prompt,

@@ -3,7 +3,7 @@
 # Role: 思考レベルの投機的デコーディングを実装し、軽量モデルで思考ドラフトを生成し、高機能モデルで検証・統合する。
 
 import logging
-from typing import Any, Dict, Optional, List # ★★★ 修正箇所: List をインポート ★★★
+from typing import Any, Dict, Optional, List
 import httpx
 import asyncio
 
@@ -103,7 +103,7 @@ class SpeculativePipeline:
                 
                 # スコア付け
                 score = 0
-                if any(k in model_name for k in ['phi', 'gemma', 'tiny', '2b', '3b']):
+                if any(k in model_name for k in ['phi', 'gemma:2b', 'tiny', '2b', '3b']):
                     score += 2
                 if 'instruct' in model_name: # 指示追従モデルを優先
                     score += 1
@@ -141,7 +141,7 @@ class SpeculativePipeline:
                 
                 # 多様性を出すために温度を少し上げる
                 draft_model_kwargs = {'model': model_name, 'temperature': 0.8}
-                tasks.append(draft_provider.call(draft_prompt, "", **draft_model_kwargs))
+                tasks.append(draft_provider.standard_call(draft_prompt, "", **draft_model_kwargs))
 
             draft_responses = await asyncio.gather(*tasks)
             
@@ -190,6 +190,7 @@ class SpeculativePipeline:
         return {
             'success': True,
             'final_solution': solution,
+            'image_url': None, # ★★★ 修正箇所: image_url を追加 ★★★
             'thought_process': thought_process,
             'v2_improvements': v2_improvements,
             'version': 'v2',
@@ -201,6 +202,7 @@ class SpeculativePipeline:
         return {
             'success': False,
             'final_solution': None,
+            'image_url': None, # ★★★ 修正箇所: image_url を追加 ★★★
             'thought_process': {'error': error_message},
             'v2_improvements': {'speculative_execution_enabled': True},
             'version': 'v2',
