@@ -129,7 +129,10 @@ class EnhancedLLMProvider(LLMProvider):
 
             force_regime = self._determine_force_regime(mode)
             base_model_kwargs = self._get_optimized_params(mode, kwargs)
-
+            
+            # ★★★ 修正箇所 ★★★
+            # CogniQuantumSystemV2 には、拡張機能を持たない「標準プロバイダー」を渡す。
+            # これにより、推論エンジン内からの呼び出しで enhanced_call が再帰的に呼ばれることを防ぐ。
             cq_system = CogniQuantumSystemV2(self.standard_provider, base_model_kwargs)
 
             # CogniQuantumSystemV2.solve_problemに渡す引数をkwargsから抽出
