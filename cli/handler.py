@@ -24,7 +24,7 @@ class CogniQuantumCLIV2Fixed:
         # V2専用モード定義
         self.v2_modes = {
             'efficient', 'balanced', 'decomposed', 'adaptive', 'paper_optimized', 'parallel',
-            'quantum_inspired', 'edge', 'speculative_thought' # speculative_thoughtモードを追加
+            'quantum_inspired', 'edge', 'speculative_thought', 'self_discover'
         }
 
     async def check_system_health(self, provider_name: str) -> Dict[str, Any]:
@@ -165,10 +165,9 @@ class CogniQuantumCLIV2Fixed:
         enhanced = kwargs.copy()
         mode = kwargs.get('mode', 'simple')
         
-        # V2フラグ追加
         enhanced['force_v2'] = True
         
-        # 論文ベースの温度調整
+        # ★★★ 修正箇所: mode_temp_map に self_discover を追加 ★★★
         if 'temperature' not in enhanced:
             mode_temp_map = {
                 'efficient': 0.3,
@@ -176,10 +175,11 @@ class CogniQuantumCLIV2Fixed:
                 'decomposed': 0.5,
                 'adaptive': 0.6,
                 'paper_optimized': 0.6,
-                'parallel': 0.6,  # 追加
-                'quantum_inspired': 0.7, # 追加
-                'edge': 0.3, # 追加
-                'speculative_thought': 0.7, # 追加
+                'parallel': 0.6,
+                'quantum_inspired': 0.7,
+                'edge': 0.3,
+                'speculative_thought': 0.7,
+                'self_discover': 0.5, # 追加
             }
             enhanced['temperature'] = mode_temp_map.get(mode, 0.7)
         
@@ -190,24 +190,24 @@ class CogniQuantumCLIV2Fixed:
         standard = kwargs.copy()
         mode = kwargs.get('mode', 'simple')
         
-        # V2専用モードを標準モードにマッピング
+        # ★★★ 修正箇所: mode_conversion に self_discover を追加 ★★★
         mode_conversion = {
             'efficient': 'simple',
             'balanced': 'reasoning',
             'decomposed': 'reasoning',
             'adaptive': 'reasoning',
             'paper_optimized': 'reasoning',
-            'parallel': 'reasoning', # reasoningモードにマッピング
-            'quantum_inspired': 'creative-fusion', # creative-fusionモードにマッピング
-            'edge': 'simple', # simpleモードにマッピング
-            'speculative_thought': 'creative-fusion', # creative-fusionモードにマッピング
+            'parallel': 'reasoning',
+            'quantum_inspired': 'creative-fusion',
+            'edge': 'simple',
+            'speculative_thought': 'creative-fusion',
+            'self_discover': 'reasoning', # reasoningにマッピング
         }
         
         if mode in mode_conversion:
             standard['mode'] = mode_conversion[mode]
             logger.info(f"モード変換: {mode} -> {standard['mode']}")
         
-        # V2専用フラグを削除
         standard.pop('force_v2', None)
         
         return standard

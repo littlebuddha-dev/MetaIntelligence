@@ -37,8 +37,10 @@ Our system offers a comprehensive suite of reasoning modes designed to tackle pr
 | `parallel` | All | **Best-of-Breed Quality** | Mission-critical tasks, maximum quality |
 | `quantum_inspired` | All | Holistic, Synthesized Insight | Brainstorming, philosophical questions, strategy |
 | `edge` | Low | Lightweight & Fast | Low-resource devices, quick checks |
-| `speculative_thought` | All | Exploratory, Rapid Prototyping | Early-stage ideation, multiple perspectives |
+| `speculative_thought` | All | **Exploratory, Rapid Prototyping** | Early-stage ideation, multiple perspectives |
+| `self_discover` | All | **Autonomous Strategy Construction** | Novel or ill-defined problems |
 | `paper_optimized` | All | Complete Research Integration | Maximum research benefit, benchmarking |
+
 
 ### Advanced Features
 

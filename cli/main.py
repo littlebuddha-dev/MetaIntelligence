@@ -1,6 +1,6 @@
 # /cli/main.py
-# タイトル: CLI main entrypoint with Corrected Argument Passing
-# 役割: CLIのエントリーポイントと引数解析。関数呼び出し時の引数の重複を解消する。
+# タイトル: CLI main entrypoint with Corrected Argument Passing and Syntax Fix
+# 役割: CLIのエントリーポイントと引数解析。構文エラーを修正し、処理フローを改善。
 
 import argparse
 import asyncio
@@ -35,7 +35,7 @@ async def main():
     mode_choices = [
         'simple', 'chat', 'reasoning', 'creative-fusion', 'self-correct',
         'efficient', 'balanced', 'decomposed', 'adaptive', 'paper_optimized', 'parallel',
-        'quantum_inspired', 'edge', 'speculative_thought' # 'speculative_thought' を追加
+        'quantum_inspired', 'edge', 'speculative_thought', 'self_discover'
     ]
     parser.add_argument("--mode", default=settings.V2_DEFAULT_MODE, choices=mode_choices, help="実行モード")
     
@@ -81,8 +81,19 @@ async def main():
 
     if not args.provider:
         parser.print_help()
-        return
-        
+        sys.exit(1)
+
+    # --- 健全性チェックの処理を先に実行 ---
+    if args.health_check:
+        try:
+            health_report = await cli.check_system_health(args.provider)
+            print(format_json_output(health_report) if args.json else json.dumps(health_report, indent=2, ensure_ascii=False))
+        except Exception as e:
+            print(f"健全性チェック中にエラー: {e}")
+        finally:
+            return # 健全性チェックが指定されたら、ここで処理を終了
+
+    # --- プロバイダーの利用可能性チェック ---
     is_available = True
     if args.provider == 'ollama':
         ollama_health = await cli._check_ollama_models()
@@ -101,26 +112,15 @@ async def main():
     
     if not is_available:
         print("プロバイダーが利用できないため、処理を中断します。")
-        return
+        sys.exit(1)
 
-    if args.health_check:
-        try:
-            health_report = await cli.check_system_health(args.provider)
-            print(format_json_output(health_report) if args.json else json.dumps(health_report, indent=2, ensure_ascii=False))
-            return
-        except Exception as e:
-            print(f"健全性チェック中にエラー: {e}")
-            return
-
+    # --- メインのプロンプト処理 ---
     prompt = await read_from_pipe_or_file(args.prompt, args.file)
     if not prompt:
-        parser.error("プロンプトが指定されていません。")
+        parser.error("プロンプトが指定されていません。--health-check などの管理コマンドではない場合、プロンプトは必須です。")
 
     # kwargsを構築
     kwargs = {k: v for k, v in vars(args).items() if v is not None}
-    
-    # ★★★ 修正箇所 ★★★
-    # ポジショナル引数として渡すキーをkwargsから明示的に削除する
     kwargs.pop('provider', None)
     kwargs.pop('prompt', None)
 
@@ -138,6 +138,7 @@ async def main():
             if response.get('image_url'):
                 print(f"\n\n関連画像: {response['image_url']}")
 
+            # エラーやV2情報など、補足情報がある場合に改行を入れる
             if response.get('error') or response.get('fallback_used') or response.get('version') == 'v2':
                 print() 
 
@@ -161,19 +162,21 @@ async def main():
                         print(f"  • {error}")
             
             elif response.get('version') == 'v2':
-                v2_info = response.get('paper_based_improvements', {})
+                v2_info = response.get('v2_improvements', {})
                 print(f"\n📊 V2処理情報:")
                 print(f"  複雑性体制: {v2_info.get('regime', 'N/A')}")
                 print(f"  推論アプローチ: {v2_info.get('reasoning_approach', 'N/A')}")
-                if v2_info.get('overthinking_prevention'):
-                    print("  ✓ Overthinking防止有効")
-                if v2_info.get('collapse_prevention'):
-                    print("  ✓ 崩壊防止機構有効")
-                if v2_info.get('real_time_adjustment_active'):
-                    print("  ✓ リアルタイム複雑性調整有効")
+                
+                # V2 Improvementsの詳細表示
+                if v2_info.get('overthinking_prevention'): print("  ✓ Overthinking防止有効")
+                if v2_info.get('collapse_prevention'): print("  ✓ 崩壊防止機構有効")
+                if v2_info.get('real_time_adjustment_active'): print("  ✓ リアルタイム複雑性調整有効")
                 if v2_info.get('rag_enabled'):
                     rag_source = "Wikipedia" if v2_info.get('rag_source') == 'wikipedia' else 'Knowledge Base'
                     print(f"  ✓ RAGによる知識拡張有効 (ソース: {rag_source})")
+                if v2_info.get('strategy_used'): print(f"  ✓ 自己発見戦略: {v2_info.get('strategy_used')}")
+                if v2_info.get('speculative_execution_enabled'): print(f"  ✓ 投機的実行有効 (ドラフトモデル: {v2_info.get('draft_model')})")
+
 
     except KeyboardInterrupt:
         print("\n中断されました。")
