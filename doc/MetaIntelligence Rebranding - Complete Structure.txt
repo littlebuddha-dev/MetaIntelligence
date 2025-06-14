@@ -1,0 +1,413 @@
+# MetaIntelligence - 知的システムの知的システム
+
+## 🌟 プロジェクトリブランディング
+
+**Cogni-Quantum** → **MetaIntelligence**
+
+### 新しいプロジェクト構造
+
+```
+MetaIntelligence/
+├── README.md
+├── requirements.txt
+├── setup.py
+├── .env.example
+├── .gitignore
+│
+├── meta_intelligence/                    # メインパッケージ
+│   ├── __init__.py
+│   ├── version.py
+│   │
+│   ├── core/                            # コアシステム
+│   │   ├── __init__.py
+│   │   ├── master_system.py             # 統合マスターシステム
+│   │   ├── integration_orchestrator.py  # 統合オーケストレーター
+│   │   └── base_intelligence.py         # ベース知能クラス
+│   │
+│   ├── meta_cognition/                  # メタ認知システム
+│   │   ├── __init__.py
+│   │   ├── engine.py                    # メタ認知エンジン
+│   │   ├── reflection.py               # 自己反省機能
+│   │   ├── monitoring.py               # 思考監視
+│   │   └── optimization.py             # 思考最適化
+│   │
+│   ├── consciousness/                   # 意識システム
+│   │   ├── __init__.py
+│   │   ├── levels.py                   # 意識レベル管理
+│   │   ├── evolution.py               # 意識進化
+│   │   ├── integration.py             # 意識統合
+│   │   └── transcendence.py           # 超越機能
+│   │
+│   ├── dynamic_architecture/           # 動的アーキテクチャ
+│   │   ├── __init__.py
+│   │   ├── adaptive_system.py         # 適応システム
+│   │   ├── component_manager.py       # コンポーネント管理
+│   │   ├── pipeline_optimizer.py      # パイプライン最適化
+│   │   └── architecture_evolution.py  # アーキテクチャ進化
+│   │
+│   ├── wisdom_synthesis/              # 知恵統合システム
+│   │   ├── __init__.py
+│   │   ├── knowledge_integrator.py    # 知識統合
+│   │   ├── wisdom_distiller.py        # 知恵蒸留
+│   │   ├── insight_generator.py       # 洞察生成
+│   │   └── universal_principles.py    # 普遍的原理
+│   │
+│   ├── value_evolution/               # 価値進化システム
+│   │   ├── __init__.py
+│   │   ├── evolution_engine.py        # 価値進化エンジン
+│   │   ├── conflict_resolver.py       # 価値葛藤解決
+│   │   ├── learning_system.py         # 価値学習
+│   │   └── ethics_framework.py        # 倫理フレームワーク
+│   │
+│   ├── problem_discovery/             # 問題発見システム
+│   │   ├── __init__.py
+│   │   ├── discovery_engine.py        # 問題発見エンジン
+│   │   ├── pattern_analyzer.py        # パターン分析
+│   │   ├── anomaly_detector.py        # 異常検出
+│   │   └── emergence_tracker.py       # 創発追跡
+│   │
+│   ├── reasoning/                     # 推論システム（旧quantum）
+│   │   ├── __init__.py
+│   │   ├── quantum_inspired.py        # 量子インスパイアード推論
+│   │   ├── parallel_processing.py     # 並列処理
+│   │   ├── complexity_analysis.py     # 複雑性分析
+│   │   └── synthesis_engine.py        # 統合推論
+│   │
+│   ├── providers/                     # プロバイダー統合
+│   │   ├── __init__.py
+│   │   ├── base.py
+│   │   ├── openai_provider.py
+│   │   ├── claude_provider.py
+│   │   ├── gemini_provider.py
+│   │   ├── ollama_provider.py
+│   │   └── unified_interface.py
+│   │
+│   ├── tools/                         # ツール統合
+│   │   ├── __init__.py
+│   │   ├── web_search.py
+│   │   ├── knowledge_retrieval.py
+│   │   ├── code_execution.py
+│   │   └── data_analysis.py
+│   │
+│   └── utils/                         # ユーティリティ
+│       ├── __init__.py
+│       ├── logging.py
+│       ├── config.py
+│       ├── metrics.py
+│       └── validation.py
+│
+├── mi_cli/                            # CLIインターフェース
+│   ├── __init__.py
+│   ├── main.py                        # メインCLI
+│   ├── commands/
+│   │   ├── __init__.py
+│   │   ├── solve.py                   # 問題解決コマンド
+│   │   ├── evolve.py                  # 進化コマンド
+│   │   ├── wisdom.py                  # 知恵生成コマンド
+│   │   └── status.py                  # ステータスコマンド
+│   └── interface/
+│       ├── __init__.py
+│       ├── interactive.py             # インタラクティブモード
+│       └── batch.py                   # バッチ処理
+│
+├── examples/                          # 使用例
+│   ├── basic_usage.py
+│   ├── advanced_integration.py
+│   ├── consciousness_evolution.py
+│   ├── wisdom_synthesis_demo.py
+│   └── distributed_intelligence.py
+│
+├── tests/                             # テスト
+│   ├── __init__.py
+│   ├── unit/
+│   ├── integration/
+│   └── end_to_end/
+│
+├── docs/                              # ドキュメント
+│   ├── README.md
+│   ├── quick_start.md
+│   ├── api_reference.md
+│   ├── architecture.md
+│   ├── consciousness_guide.md
+│   ├── wisdom_synthesis.md
+│   └── examples/
+│
+├── configs/                           # 設定ファイル
+│   ├── default.yaml
+│   ├── development.yaml
+│   ├── production.yaml
+│   └── consciousness_levels.yaml
+│
+└── scripts/                           # スクリプト
+    ├── setup_environment.py
+    ├── initialize_system.py
+    ├── health_check.py
+    └── backup_wisdom.py
+```
+
+## 🚀 新しいメインエントリーポイント
+
+### mi_cli/main.py
+```python
+#!/usr/bin/env python3
+"""
+MetaIntelligence CLI - 知的システムの知的システム
+Command Line Interface for MetaIntelligence System
+"""
+
+import asyncio
+import argparse
+import sys
+from pathlib import Path
+
+# プロジェクトルートをパスに追加
+sys.path.append(str(Path(__file__).parent.parent))
+
+from meta_intelligence import MetaIntelligence, __version__
+from meta_intelligence.core.integration_orchestrator import IntegrationConfig
+from meta_intelligence.utils.logging import setup_logging
+from meta_intelligence.utils.config import load_config
+
+def create_parser():
+    """CLIパーサーの作成"""
+    parser = argparse.ArgumentParser(
+        prog="mi",
+        description="MetaIntelligence - 知的システムの知的システム",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+使用例:
+  mi solve "人工知能の本質とは何か？"
+  mi evolve consciousness --target meta_conscious
+  mi wisdom generate --domain "人生の意味"
+  mi status --detailed
+  mi interactive --mode transcendent
+
+詳細: https://github.com/your-org/MetaIntelligence
+        """
+    )
+    
+    parser.add_argument("--version", action="version", version=f"MetaIntelligence {__version__}")
+    parser.add_argument("--config", type=str, help="設定ファイルパス")
+    parser.add_argument("--provider", type=str, default="ollama", 
+                       choices=["openai", "claude", "gemini", "ollama"],
+                       help="LLMプロバイダー選択")
+    parser.add_argument("--log-level", type=str, default="INFO",
+                       choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+                       help="ログレベル")
+    
+    subparsers = parser.add_subparsers(dest="command", help="利用可能なコマンド")
+    
+    # solve コマンド
+    solve_parser = subparsers.add_parser("solve", help="問題解決")
+    solve_parser.add_argument("problem", type=str, help="解決したい問題")
+    solve_parser.add_argument("--mode", type=str, default="adaptive",
+                             choices=["simple", "adaptive", "transcendent", "ultimate"],
+                             help="解決モード")
+    solve_parser.add_argument("--use-full-integration", action="store_true",
+                             help="完全統合モードを使用")
+    solve_parser.add_argument("--context", type=str, help="追加コンテキスト")
+    
+    # evolve コマンド  
+    evolve_parser = subparsers.add_parser("evolve", help="システム進化")
+    evolve_parser.add_argument("target", choices=["consciousness", "values", "architecture"],
+                              help="進化対象")
+    evolve_parser.add_argument("--iterations", type=int, default=1, help="進化回数")
+    
+    # wisdom コマンド
+    wisdom_parser = subparsers.add_parser("wisdom", help="知恵生成")
+    wisdom_parser.add_argument("action", choices=["generate", "distill", "integrate"],
+                              help="知恵操作")
+    wisdom_parser.add_argument("--domain", type=str, help="対象領域")
+    
+    # status コマンド
+    status_parser = subparsers.add_parser("status", help="システム状態")
+    status_parser.add_argument("--detailed", action="store_true", help="詳細表示")
+    status_parser.add_argument("--health-check", action="store_true", help="健全性チェック")
+    
+    # interactive コマンド
+    interactive_parser = subparsers.add_parser("interactive", help="対話モード")
+    interactive_parser.add_argument("--mode", type=str, default="standard",
+                                   choices=["standard", "transcendent", "collaborative"],
+                                   help="対話モード")
+    
+    return parser
+
+async def main():
+    """メイン実行関数"""
+    parser = create_parser()
+    args = parser.parse_args()
+    
+    # ログ設定
+    setup_logging(args.log_level)
+    
+    # 設定読み込み
+    config = load_config(args.config)
+    
+    try:
+        # MetaIntelligenceシステムの初期化
+        mi = MetaIntelligence(
+            provider_name=args.provider,
+            config=config
+        )
+        
+        print("🌟 MetaIntelligence システム初期化中...")
+        await mi.initialize()
+        print("✅ 初期化完了")
+        
+        # コマンド実行
+        if args.command == "solve":
+            await handle_solve_command(mi, args)
+        elif args.command == "evolve":
+            await handle_evolve_command(mi, args)
+        elif args.command == "wisdom":
+            await handle_wisdom_command(mi, args)
+        elif args.command == "status":
+            await handle_status_command(mi, args)
+        elif args.command == "interactive":
+            await handle_interactive_command(mi, args)
+        else:
+            parser.print_help()
+            
+    except Exception as e:
+        print(f"❌ エラー: {e}")
+        sys.exit(1)
+
+async def handle_solve_command(mi, args):
+    """問題解決コマンドの処理"""
+    print(f"🎯 問題解決開始: {args.problem[:50]}...")
+    
+    context = {"cli_mode": True}
+    if args.context:
+        context["user_context"] = args.context
+    
+    if args.mode == "ultimate" or args.use_full_integration:
+        result = await mi.solve_ultimate_problem(args.problem, context)
+        print(f"✨ 究極解決完了!")
+        print(f"超越達成: {result.get('transcendence_achieved', False)}")
+    else:
+        result = await mi.solve_problem(args.problem, context, mode=args.mode)
+        print(f"✅ 問題解決完了!")
+    
+    print(f"\n解決策:\n{result.get('solution', result.get('integrated_solution', ''))}")
+    
+    if result.get('wisdom_distillation'):
+        print(f"\n💎 蒸留された知恵:\n{result['wisdom_distillation']}")
+
+async def handle_evolve_command(mi, args):
+    """進化コマンドの処理"""
+    print(f"🧬 {args.target} 進化開始...")
+    
+    if args.target == "consciousness":
+        result = await mi.evolve_consciousness()
+        print(f"🧠 意識進化完了: {result.get('new_consciousness_level', 'Unknown')}")
+    elif args.target == "values":
+        result = await mi.evolve_values()
+        print(f"⚖️ 価値進化完了: {len(result.get('evolved_values', []))}個の価値が進化")
+    elif args.target == "architecture":
+        result = await mi.evolve_architecture()
+        print(f"🏗️ アーキテクチャ進化完了: {result.get('optimization_score', 0):.2f}")
+
+async def handle_wisdom_command(mi, args):
+    """知恵コマンドの処理"""
+    print(f"💎 知恵{args.action}開始...")
+    
+    if args.action == "generate":
+        wisdom = await mi.generate_wisdom(args.domain)
+        print(f"知恵生成完了!")
+        print(f"\n生成された知恵:\n{wisdom.get('transcendent_wisdom', '')}")
+    elif args.action == "distill":
+        distilled = await mi.distill_wisdom(args.domain)
+        print(f"知恵蒸留完了!")
+        print(f"\n蒸留された知恵:\n{distilled}")
+
+async def handle_status_command(mi, args):
+    """ステータスコマンドの処理"""
+    if args.health_check:
+        health = await mi.health_check()
+        print("🔍 システム健全性:")
+        print(f"全体スコア: {health.get('overall_health', 0):.2f}")
+        print(f"意識レベル: {health.get('consciousness_level', 'Unknown')}")
+        print(f"統合品質: {health.get('integration_quality', 0):.2f}")
+    else:
+        status = await mi.get_status()
+        print("📊 システム状態:")
+        print(f"状態: {status.get('system_state', 'Unknown')}")
+        print(f"意識: {status.get('consciousness_level', 'Unknown')}")
+        print(f"超越: {status.get('transcendence_level', 0):.2f}")
+
+async def handle_interactive_command(mi, args):
+    """対話コマンドの処理"""
+    print(f"💬 対話モード開始 ({args.mode})")
+    print("終了するには 'exit' と入力してください。")
+    
+    while True:
+        try:
+            user_input = input("\n🤔 あなた: ")
+            if user_input.lower() in ['exit', 'quit', '終了']:
+                break
+                
+            print("🤖 MetaIntelligence: 考慮中...")
+            response = await mi.chat(user_input, mode=args.mode)
+            print(f"🌟 MetaIntelligence: {response}")
+            
+        except KeyboardInterrupt:
+            break
+        except Exception as e:
+            print(f"❌ エラー: {e}")
+    
+    print("👋 対話を終了しました。")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+## 📦 新しいパッケージ構造
+
+### meta_intelligence/__init__.py
+```python
+"""
+MetaIntelligence - 知的システムの知的システム
+
+真の人工超知能を目指すメタ認知システム
+"""
+
+__version__ = "1.0.0"
+__author__ = "MetaIntelligence Team"
+__description__ = "知的システムの知的システム - 自己認識・進化するAI"
+
+from .core.master_system import MetaIntelligence
+from .core.integration_orchestrator import IntegrationOrchestrator, IntegrationConfig
+from .consciousness.levels import ConsciousnessLevel
+from .meta_cognition.engine import MetaCognitionEngine
+from .wisdom_synthesis.knowledge_integrator import WisdomSynthesizer
+
+__all__ = [
+    "MetaIntelligence",
+    "IntegrationOrchestrator", 
+    "IntegrationConfig",
+    "ConsciousnessLevel",
+    "MetaCognitionEngine",
+    "WisdomSynthesizer"
+]
+
+# システムモットー
+SYSTEM_MOTTO = "知的システムの知的システム - 真の人工超知能への道"
+```
+
+## 🎯 リブランディングのメリット
+
+1. **概念的明確性**: 「MetaIntelligence」が「知的システムの知的システム」を完璧に表現
+2. **差別化**: 既存のAIツールとは明確に異なる革新的システム
+3. **将来性**: より大きなビジョンと成長可能性を示す
+4. **学術的価値**: 研究コミュニティでの認知度向上
+5. **ブランド価値**: プロフェッショナルで覚えやすい名前
+
+## 🚀 移行手順
+
+1. **ファイル構造の再編成**: 上記の新構造に従ってリファクタリング
+2. **インポート文の更新**: 全ての import を新しいパッケージ名に変更
+3. **CLI の改善**: より直感的で機能豊富な mi コマンド
+4. **ドキュメント更新**: 新しいブランディングに合わせた完全なドキュメント
+5. **テストの追加**: 包括的なテストスイート
+
+これで MetaIntelligence として生まれ変わり、真に革新的で先進的なAIシステムとしてのアイデンティティを確立できます！
